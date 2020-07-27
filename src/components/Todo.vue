@@ -68,13 +68,35 @@
   </v-container>
 </template>
 
-<script>
+<script lang="ts">
 import mockData from "./mockData.json";
+import Vue from "vue";
 
-export default {
+type Header = {
+  text: string;
+  value: string;
+  sortable?: boolean;
+};
+
+type TodoItem = {
+  id: number;
+  title: string;
+  completed: boolean;
+};
+
+type Data = {
+  dialog: boolean;
+  headers: Header[];
+  todos: TodoItem[];
+  editedIndex: number;
+  editedItem: TodoItem;
+  defaultItem: TodoItem;
+};
+
+const Todo = Vue.extend({
   name: "Todo",
 
-  data() {
+  data(): Data {
     return {
       dialog: false,
       headers: [
@@ -98,39 +120,39 @@ export default {
   },
 
   computed: {
-    formTitle() {
+    formTitle(): string {
       return this.editedIndex === -1 ? "New Todo" : "Edit Todo";
     }
   },
 
   watch: {
-    dialog(val) {
+    dialog(val: boolean): void {
       val || this.close();
     }
   },
 
-  created() {
+  created(): void {
     this.initialize();
   },
 
   methods: {
-    initialize() {
+    initialize(): void {
       this.todos = mockData;
     },
 
-    editItem(item) {
+    editItem(item: TodoItem) {
       this.editedIndex = this.todos.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.dialog = true;
     },
 
-    deleteItem(item) {
+    deleteItem(item: TodoItem): void {
       const index = this.todos.indexOf(item);
       confirm("Are you sure you want to delete this todo item?") &&
         this.todos.splice(index, 1);
     },
 
-    close() {
+    close(): void {
       this.dialog = false;
       this.$nextTick(() => {
         this.editedItem = Object.assign({}, this.defaultItem);
@@ -138,7 +160,7 @@ export default {
       });
     },
 
-    save() {
+    save(): void {
       if (this.editedIndex > -1) {
         Object.assign(this.todos[this.editedIndex], this.editedItem);
       } else {
@@ -149,5 +171,7 @@ export default {
       this.close();
     }
   }
-};
+});
+
+export default Todo;
 </script>

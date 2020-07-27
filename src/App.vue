@@ -11,14 +11,17 @@
   </v-app>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from "vue";
 import Todo from "./components/Todo.vue";
 
-export default {
+const App = Vue.extend({
   name: "App",
 
   components: {
     Todo
   }
-};
+});
+
+export default App;
 </script>
