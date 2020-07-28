@@ -1,8 +1,8 @@
 <template>
   <v-container>
     <v-data-table
-      :headers="headers"
-      :items="todos"
+      :headers="state.headers"
+      :items="state.todos"
       item-key="id"
       sort-by="id"
       class="elevation-1"
@@ -10,7 +10,7 @@
       <template v-slot:top>
         <v-toolbar flat color="white">
           <v-spacer></v-spacer>
-          <v-dialog v-model="dialog" max-width="500px">
+          <v-dialog v-model="state.dialog" max-width="500px">
             <template v-slot:activator="{ on, attrs }">
               <v-btn color="primary" dark class="mb-2" v-bind="attrs" v-on="on"
                 >New Todo</v-btn
@@ -19,7 +19,7 @@
 
             <v-card>
               <v-card-title>
-                <span class="headline">{{ formTitle }}</span>
+                <span class="headline">{{ state.formTitle }}</span>
               </v-card-title>
 
               <v-card-text>
@@ -27,7 +27,7 @@
                   <v-row>
                     <v-col cols="12" sm="12" md="12">
                       <v-text-field
-                        v-model="editedItem.title"
+                        v-model="state.editedItem.title"
                         label="Title"
                       ></v-text-field>
                     </v-col>
@@ -70,12 +70,12 @@
 
 <script>
 import mockData from "./mockData.json";
+import { reactive, computed, watch } from "@vue/composition-api";
 
 export default {
-  name: "Todo",
-
-  data() {
-    return {
+  setup(_, { root }) {
+    // define state data
+    const state = reactive({
       dialog: false,
       headers: [
         { text: "Done", value: "completed" },
@@ -93,61 +93,55 @@ export default {
         id: 0,
         title: "",
         completed: false
-      }
+      },
+      formTitle: computed(() =>
+        state.editedIndex === -1 ? "New Todo" : "Edit Todo"
+      )
+    });
+
+    // define methods
+    const initialize = () => {
+      state.todos = mockData;
     };
-  },
 
-  computed: {
-    formTitle() {
-      return this.editedIndex === -1 ? "New Todo" : "Edit Todo";
-    }
-  },
+    const editItem = item => {
+      state.editedIndex = state.todos.indexOf(item);
+      state.editedItem = Object.assign({}, item);
+      state.dialog = true;
+    };
 
-  watch: {
-    dialog(val) {
-      val || this.close();
-    }
-  },
+    const deleteItem = item => {
+      const index = state.todos.indexOf(item);
+      confirm("Are you sure you want to delete state todo item?") &&
+        state.todos.splice(index, 1);
+    };
 
-  created() {
-    this.initialize();
-  },
-
-  methods: {
-    initialize() {
-      this.todos = mockData;
-    },
-
-    editItem(item) {
-      this.editedIndex = this.todos.indexOf(item);
-      this.editedItem = Object.assign({}, item);
-      this.dialog = true;
-    },
-
-    deleteItem(item) {
-      const index = this.todos.indexOf(item);
-      confirm("Are you sure you want to delete this todo item?") &&
-        this.todos.splice(index, 1);
-    },
-
-    close() {
-      this.dialog = false;
-      this.$nextTick(() => {
-        this.editedItem = Object.assign({}, this.defaultItem);
-        this.editedIndex = -1;
+    const close = () => {
+      state.dialog = false;
+      root.$nextTick(() => {
+        state.editedItem = Object.assign({}, state.defaultItem);
+        state.editedIndex = -1;
       });
-    },
+    };
 
-    save() {
-      if (this.editedIndex > -1) {
-        Object.assign(this.todos[this.editedIndex], this.editedItem);
+    const save = () => {
+      if (state.editedIndex > -1) {
+        Object.assign(state.todos[state.editedIndex], state.editedItem);
       } else {
-        const lastIndex = this.todos[this.todos.length - 1].id;
-        this.editedItem.id = lastIndex + 1;
-        this.todos.push(this.editedItem);
+        const lastIndex = state.todos[state.todos.length - 1].id;
+        state.editedItem.id = lastIndex + 1;
+        state.todos.push(state.editedItem);
       }
-      this.close();
-    }
+      close();
+    };
+
+    watch(state.dialog, val => {
+      val || state.close();
+    });
+
+    initialize();
+
+    return { state, editItem, deleteItem, close, save };
   }
 };
 </script>
